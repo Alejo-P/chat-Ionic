@@ -12,7 +12,7 @@ const routes: Routes = [
 		...canActivate(redirectLoggedInToHome)
 	},
 	{
-		path: 'home',
+		path: 'chat',
 		loadChildren: () => import('./pages/chat/chat.module').then((m) => m.ChatPageModule),
 		...canActivate(redirectUnauthorizedToLogin)
 	},
@@ -20,11 +20,7 @@ const routes: Routes = [
 		path: '**',
 		redirectTo: '',
 		pathMatch: 'full'
-	},
-  {
-    path: 'chat',
-    loadChildren: () => import('./pages/chat/chat.module').then( m => m.ChatPageModule)
-  }
+	}
 ];
 
 @NgModule({
