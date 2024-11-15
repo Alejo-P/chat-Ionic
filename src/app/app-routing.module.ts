@@ -13,14 +13,18 @@ const routes: Routes = [
 	},
 	{
 		path: 'home',
-		loadChildren: () => import('./home/home.module').then((m) => m.HomePageModule),
+		loadChildren: () => import('./pages/chat/chat.module').then((m) => m.ChatPageModule),
 		...canActivate(redirectUnauthorizedToLogin)
 	},
 	{
 		path: '**',
 		redirectTo: '',
 		pathMatch: 'full'
-	}
+	},
+  {
+    path: 'chat',
+    loadChildren: () => import('./pages/chat/chat.module').then( m => m.ChatPageModule)
+  }
 ];
 
 @NgModule({
