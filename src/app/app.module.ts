@@ -1,29 +1,32 @@
+import { FIREBASE_OPTIONS } from '@angular/fire/compat';
+
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
+
 import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
+import { SplashScreen } from '@ionic-native/splash-screen/ngx';
+import { StatusBar } from '@ionic-native/status-bar/ngx';
+
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
-import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
+import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
-import { FirestoreModule } from '@angular/fire/firestore'
-import { getDatabase, provideDatabase } from '@angular/fire/database';
-import { firebaseConfig } from '../environments/environment';
+import { getFirestore, provideFirestore } from '@angular/fire/firestore';
+import { firebaseConfig as environment } from 'src/environments/environment';
 
 @NgModule({
- declarations: [AppComponent],
- imports: [
-  BrowserModule,
-  IonicModule.forRoot(),
-  AppRoutingModule,
-  FirestoreModule
-],
+  declarations: [AppComponent],
+  imports: [BrowserModule, IonicModule.forRoot(), AppRoutingModule],
   providers: [
- { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
- provideFirebaseApp(() => initializeApp(firebaseConfig)),
- provideAuth(() => getAuth()),
- provideDatabase(() => getDatabase())
- ],
- bootstrap: [AppComponent]
+    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    { provide: FIREBASE_OPTIONS, useValue: environment},
+    provideFirebaseApp(() => initializeApp(environment)),
+    provideAuth(() => getAuth()),
+    provideFirestore(() => getFirestore()),
+    StatusBar,
+    SplashScreen,
+  ],
+  bootstrap: [AppComponent],
 })
 export class AppModule {}

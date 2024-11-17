@@ -2,9 +2,8 @@ import { Injectable } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFirestore } from '@angular/fire/compat/firestore';
 import firebase from 'firebase/compat/app';
-import 'firebase/compat/firestore';
+import { switchMap, map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
 
 export interface User {
   uid: string;
@@ -24,32 +23,31 @@ export interface Message {
   providedIn: 'root'
 })
 export class ChatService {
-  currentUser: User | null = null;
+  currentUser: firebase.User | null = null;
 
   constructor(private afAuth: AngularFireAuth, private afs: AngularFirestore) {
-    this.afAuth.authState.subscribe((user) => {
-      if (user) {
-        this.currentUser = { uid: user.uid, email: user.email! };
-      } else {
-        this.currentUser = null;
-      }
+    this.afAuth.onAuthStateChanged((user) => {
+      this.currentUser = user;
     });
   }
 
-  async signup({ email, password }: { email: string; password: string }): Promise<void> {
-    const credential = await this.afAuth.createUserWithEmailAndPassword(email, password);
-    const user = credential.user;
-    const uid = user?.uid;
+  async signup({ email, password }: { email: string, password: string }): Promise<any> {
+    const credential = await this.afAuth.createUserWithEmailAndPassword(
+      email,
+      password
+    );
 
-    if (uid && user) {
-      await this.afs.doc(`users/${uid}`).set({
-        uid,
-        email: user.email,
-      });
-    }
+    const uid = credential.user?.uid;
+
+    return this.afs.doc(
+      `users/${uid}`
+    ).set({
+      uid,
+      email: credential.user?.email,
+    })
   }
 
-  signIn({ email, password }: { email: string; password: string }): Promise<firebase.auth.UserCredential> {
+  signIn({ email, password }: { email: string, password: string }): Promise<any> {
     return this.afAuth.signInWithEmailAndPassword(email, password);
   }
 
@@ -57,45 +55,39 @@ export class ChatService {
     return this.afAuth.signOut();
   }
 
-  addChatMessage(msg: string): Promise<void> {
-    if (!this.currentUser) {
-      throw new Error('No current user available to send a message.');
-    }
-
+  addChatMessage(msg: string) {
     return this.afs.collection('messages').add({
       msg: msg,
-      from: this.currentUser.uid,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    }).then(() => {});
+      from: this.currentUser?.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
   }
-
-  getChatMessages(): Observable<Message[]> {
+  
+  getChatMessages() {
     let users: User[] = [];
-
     return this.getUsers().pipe(
-      switchMap((res) => {
+      switchMap(res => {
         users = res;
-        return this.afs.collection<Message>('messages', (ref) =>
-          ref.orderBy('createdAt')
-        ).valueChanges({ idField: 'id' });
+        return this.afs.collection('messages', ref => ref.orderBy('createdAt')).valueChanges({ idField: 'id' }) as Observable<Message[]>;
       }),
-      map((messages) => {
-        return messages.map((m) => ({
-          ...m,
-          fromName: this.getUserForMsg(m.from, users),
-          myMsg: this.currentUser?.uid === m.from,
-        }));
+      map(messages => {
+        // Get the real name for each user
+        for (let m of messages) {
+          m.fromName = this.getUserForMsg(m.from, users);
+          m.myMsg = this.currentUser?.uid === m.from;
+        }
+        return messages
       })
-    );
+    )
   }
-
-  private getUsers(): Observable<User[]> {
-    return this.afs.collection<User>('users').valueChanges({ idField: 'uid' });
+  
+  private getUsers() {
+    return this.afs.collection('users').valueChanges({ idField: 'uid' }) as Observable<User[]>;
   }
-
+  
   private getUserForMsg(msgFromId: string, users: User[]): string {
     for (let usr of users) {
-      if (usr.uid === msgFromId) {
+      if (usr.uid == msgFromId) {
         return usr.email;
       }
     }

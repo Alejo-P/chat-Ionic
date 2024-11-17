@@ -1,9 +1,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { Router } from '@angular/router';
-import { AuthService } from 'src/app/services/auth.service';
 import { IonContent } from '@ionic/angular';
 import { Observable } from 'rxjs';
-import { ChatService, Message } from 'src/app/services/chat.service';
+import { ChatService } from '../../services/chat.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-chat',
@@ -12,31 +11,27 @@ import { ChatService, Message } from 'src/app/services/chat.service';
 })
 export class ChatPage implements OnInit {
   @ViewChild(IonContent) content!: IonContent;
-  messages!: Observable<Message[]>;
+
+  messages!: Observable<any[]>;
   newMsg = '';
 
-  constructor(
-    private authService: AuthService,
-    private router: Router,
-    private chatService: ChatService
-  ) { }
-  
+  constructor(private chatService: ChatService, private router: Router) { }
+
   ngOnInit() {
     this.messages = this.chatService.getChatMessages();
-    this.messages.subscribe(() => {
-      setTimeout(() => {
-        this.content.scrollToBottom(200);
-      });
+  }
+
+  sendMessage() {
+    this.chatService.addChatMessage(this.newMsg).then(() => {
+      this.newMsg = '';
+      this.content.scrollToBottom();
     });
   }
 
-  async sendMessage() {
-    await this.chatService.addChatMessage(this.newMsg);
-    this.newMsg = '';
+  signOut() {
+    this.chatService.signOut().then(() => {
+      this.router.navigateByUrl('/', { replaceUrl: true });
+    });
   }
 
-  async logout() {
-		await this.authService.logout();
-		this.router.navigateByUrl('/', { replaceUrl: true });
-	}
 }

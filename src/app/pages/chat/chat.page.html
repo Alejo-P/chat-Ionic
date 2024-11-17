@@ -1,15 +1,11 @@
-<ion-header [translucent]="true">
-  <ion-toolbar class = "bg-blue-500 text-black">
-    <div
-      class="flex justify-between items-center"
-      style="width: 100%;"
-    >
-      <ion-title>chat</ion-title>
-      <!--Boton para cerrar secion ubicado en la esquina derecla del encabezado-->
-      <ion-button (click)="logout()">
-        <ion-icon slot="icon-only" name="log-out"></ion-icon>
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Chat</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="signOut()">
+        <ion-icon name="log-out" slot="icon-only"></ion-icon>
       </ion-button>
-    </div>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -23,16 +19,14 @@
         [ngClass]="{ 'my-message': message.myMsg, 'other-message': !message.myMsg }"
       >
         <b>{{ message.fromName }}</b><br />
-        <span>{{ message.msg }}</span>
+        <span>{{ message.msg }} </span>
         <div class="time ion-text-right">
-          <br />
-          {{ (message.createdAt as firebase.firestore.Timestamp)?.toDate() | date: 'shortTime' }}
+          <br />{{ message.createdAt?.toMillis() | date:'short' }}
         </div>
       </ion-col>
     </ion-row>
   </ion-grid>
 </ion-content>
-
 
 <ion-footer>
   <ion-toolbar color="light">
@@ -44,14 +38,15 @@
           rows="1"
           maxLength="500"
           [(ngModel)]="newMsg"
-        ></ion-textarea>
+        >
+        </ion-textarea>
       </ion-col>
       <ion-col size="2">
         <ion-button
           expand="block"
           fill="clear"
           color="primary"
-          [disabled]="!newMsg.trim()"
+          [disabled]="newMsg === ''"
           class="msg-btn"
           (click)="sendMessage()"
         >
@@ -61,5 +56,3 @@
     </ion-row>
   </ion-toolbar>
 </ion-footer>
-
-
