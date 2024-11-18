@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
-
+import { Geolocation } from '@capacitor/geolocation';
 import { Auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from '@angular/fire/auth';
 
 @Injectable({
   providedIn: 'root'
 })
+
 export class AuthService {
 
   constructor(private auth: Auth) { } 
@@ -19,6 +20,8 @@ export class AuthService {
       return
     }
   };
+
+  
   
   // Metodo para iniciar sesion
   async login({email, password}: {email: string, password: string}) {
@@ -40,4 +43,21 @@ export class AuthService {
       return
     }
   };
+}
+@Injectable({
+  providedIn: 'root',
+})
+export class LocationService {
+  async getCurrentLocation() {
+    try {
+      const coordinates = await Geolocation.getCurrentPosition();
+      return {
+        latitude: coordinates.coords.latitude,
+        longitude: coordinates.coords.longitude,
+      };
+    } catch (error) {
+      console.log('Error al obtener la ubicación:', error);
+      return null;
+    }
+  }
 }

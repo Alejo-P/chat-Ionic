@@ -11,12 +11,14 @@ export interface User {
 }
 
 export interface Message {
-  createdAt: firebase.firestore.FieldValue;
-  id: string;
+  createdAt: firebase.firestore.FieldValue | null;
+  id?: string;
   from: string;
-  msg: string;
+  msg: string | null;  // Mensaje opcional, puede ser texto o vacío si es ubicación
   fromName: string;
   myMsg: boolean;
+  isLocation?: boolean;
+  location?: { latitude: number; longitude: number };
 }
 
 @Injectable({
@@ -31,23 +33,18 @@ export class ChatService {
     });
   }
 
-  async signup({ email, password }: { email: string, password: string }): Promise<any> {
-    const credential = await this.afAuth.createUserWithEmailAndPassword(
-      email,
-      password
-    );
+  async signup({ email, password }: { email: string; password: string }): Promise<any> {
+    const credential = await this.afAuth.createUserWithEmailAndPassword(email, password);
 
     const uid = credential.user?.uid;
 
-    return this.afs.doc(
-      `users/${uid}`
-    ).set({
+    return this.afs.doc(`users/${uid}`).set({
       uid,
       email: credential.user?.email,
-    })
+    });
   }
 
-  signIn({ email, password }: { email: string, password: string }): Promise<any> {
+  signIn({ email, password }: { email: string; password: string }): Promise<any> {
     return this.afAuth.signInWithEmailAndPassword(email, password);
   }
 
@@ -55,39 +52,54 @@ export class ChatService {
     return this.afAuth.signOut();
   }
 
-  addChatMessage(msg: string) {
-    return this.afs.collection('messages').add({
-      msg: msg,
-      from: this.currentUser?.uid,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+  /**
+   * Agrega un mensaje al chat, ya sea texto o ubicación.
+   * @param message Puede ser un string o un objeto de tipo `Message`.
+   */
+  addChatMessage(message: string | Partial<Message>) {
+    const chatMessage = typeof message === 'string' 
+      ? {
+          msg: message,
+          from: this.currentUser?.uid,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          isLocation: false,
+        }
+      : {
+          ...message,
+          from: this.currentUser?.uid,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        };
+
+    return this.afs.collection('messages').add(chatMessage);
   }
-  
+
   getChatMessages() {
     let users: User[] = [];
     return this.getUsers().pipe(
-      switchMap(res => {
+      switchMap((res) => {
         users = res;
-        return this.afs.collection('messages', ref => ref.orderBy('createdAt')).valueChanges({ idField: 'id' }) as Observable<Message[]>;
+        return this.afs
+          .collection('messages', (ref) => ref.orderBy('createdAt'))
+          .valueChanges({ idField: 'id' }) as Observable<Message[]>;
       }),
-      map(messages => {
+      map((messages) => {
         // Get the real name for each user
         for (let m of messages) {
           m.fromName = this.getUserForMsg(m.from, users);
           m.myMsg = this.currentUser?.uid === m.from;
         }
-        return messages
+        return messages;
       })
-    )
+    );
   }
-  
+
   private getUsers() {
     return this.afs.collection('users').valueChanges({ idField: 'uid' }) as Observable<User[]>;
   }
-  
+
   private getUserForMsg(msgFromId: string, users: User[]): string {
     for (let usr of users) {
-      if (usr.uid == msgFromId) {
+      if (usr.uid === msgFromId) {
         return usr.email;
       }
     }

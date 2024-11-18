@@ -19,7 +19,14 @@
         [ngClass]="{ 'my-message': message.myMsg, 'other-message': !message.myMsg }"
       >
         <b>{{ message.fromName }}</b><br />
-        <span>{{ message.msg }} </span>
+        <span *ngIf="!message.isLocation">{{ message.msg }}</span>
+        <a
+          *ngIf="message.isLocation"
+          [href]="'https://www.google.com/maps?q=' + message.location.latitude + ',' + message.location.longitude"
+          target="_blank"
+        >
+          Ver ubicación
+        </a>
         <div class="time ion-text-right">
           <br />{{ message.createdAt?.toMillis() | date:'short' }}
         </div>
@@ -31,7 +38,7 @@
 <ion-footer>
   <ion-toolbar color="light">
     <ion-row class="ion-align-items-center">
-      <ion-col size="10">
+      <ion-col size="8">
         <ion-textarea
           autoGrow="true"
           class="message-input"
@@ -51,6 +58,17 @@
           (click)="sendMessage()"
         >
           <ion-icon name="send" slot="icon-only"></ion-icon>
+        </ion-button>
+      </ion-col>
+      <ion-col size="2">
+        <ion-button
+          expand="block"
+          fill="clear"
+          color="secondary"
+          class="msg-btn"
+          (click)="sendLocation()"
+        >
+          <ion-icon name="location" slot="icon-only"></ion-icon>
         </ion-button>
       </ion-col>
     </ion-row>
